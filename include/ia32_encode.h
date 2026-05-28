@@ -154,33 +154,30 @@ static inline volatile char *build_mov_register_to_memory(short mov_size, int sr
 	// for 16 bit mode we need to treat it special because it requires a prefix
 
 	if (mov_size == 2) {
-		(*tgt_addr ++) = PREFIX_16BIT;
-	}
+        (*tgt_addr++) = PREFIX_16BIT;
+    }
 
-	// now lets look at each size and determine which opcode required
+    switch(mov_size) {
 
-	switch(mov_size)  {
+    case 1:
+        (*(short *) tgt_addr) = ((0x0 << MODRM_SHIFT) +(src_reg << REG_SHIFT) + dest_reg) << 8 | 0x88;
+        tgt_addr += BYTE2_OFF;
+        break;
 
-	case 1: 
-		(*(short *) tgt_addr) = ((BASE_MODRM) + (dest_reg << REG_SHIFT) + src_reg) << 8 | 0x8a;
-		 tgt_addr += BYTE2_OFF;
-		 break;
+    case 2:
+        (*(short *) tgt_addr) = ((0x0 << MODRM_SHIFT) +(src_reg << REG_SHIFT) + dest_reg) << 8 | 0x89;
+        tgt_addr += BYTE2_OFF;
+        break;
 
-	case 2:  
-        (*(short *) tgt_addr) = ((BASE_MODRM) + (dest_reg << REG_SHIFT) + src_reg) << 8 | 0x8b;
-		 tgt_addr += BYTE2_OFF;
-		 break;
+    case 4:
+        (*(short *) tgt_addr) = ((0x0 << MODRM_SHIFT) +(src_reg << REG_SHIFT) + dest_reg) << 8 | 0x89;
+        tgt_addr += BYTE2_OFF;
+        break;
 
-	case 4: 
-		(*(short *) tgt_addr) = ((BASE_MODRM) + (dest_reg << REG_SHIFT) + src_reg) << 8 | 0x8b;
-		 tgt_addr += BYTE2_OFF;
-		 break;
+    default:
+        fprintf(stderr,"ERROR: Incorrect size (%d) passed to register to memory move\n", mov_size);
+        return (NULL);
+    }
 
-	default:
-		 fprintf(stderr,"ERROR: Incorrect size (%d) passed to register to register move\n", mov_size);
-		 return (NULL);
-
-	}
-			
-        return(tgt_addr);
+    return(tgt_addr);
 }
