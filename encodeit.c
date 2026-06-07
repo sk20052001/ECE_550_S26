@@ -1,6 +1,6 @@
 
 //
-// simple encoding example fr IA-32 validation project
+// The original code was crashing because it lacked a proper function prologue/epilogue (no enter/leave/ret), so control fell off the intended instruction stream into zeroedbytes in the mmap'd region. GDB showed those zeros decoding as bogus memory ops which dereferenced RAX==0 and faulted.
 //
 // project_part2
 //
