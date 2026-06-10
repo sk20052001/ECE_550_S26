@@ -1,19 +1,29 @@
+#
+# wimpy make example to build lab
+#
+IDIR =./include
+CC=gcc
+CFLAGS=-I$(IDIR) -g
 
-all: build
+ODIR=obj
+LDIR =./lib
 
-build: encodeit
+LIBS=-lm
 
-encodeit:
-	gcc -g -o encodeit encodeit.c -I include
+_DEPS = ia32_encode.h
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-run: build
-	./encodeit
+_OBJ = encodeit.o 
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-gdb: build
-	gdb -q ./encodeit -ex 'br encodeit.c:100' -ex run -ex 'x/40ai mptr'
+
+$(ODIR)/%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+encodeit: $(OBJ)
+	gcc -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
-.PHONY: all build run gdb
 
 clean:
-	rm -f encodeit
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ encodeit

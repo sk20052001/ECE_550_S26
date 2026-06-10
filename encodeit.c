@@ -1,15 +1,49 @@
 
 //
-// The original code was crashing because it lacked a proper function prologue/epilogue (no enter/leave/ret), so control fell off the intended instruction stream into zeroedbytes in the mmap'd region. GDB showed those zeros decoding as bogus memory ops which dereferenced RAX==0 and faulted.
+// simple encoding example for IA-32 validation project
 //
-// project_part2
+// Project Part3: added multple processing supports
 //
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 
+#include <limits.h>    /* for PAGESIZE */
+
+
 #include "ia32_encode.h"
+
+// globals to aid debug to start
+volatile char *mptr=0,*next_ptr=0,*mdptr=0, *comm_ptr=0;
+int num_inst=0,i=0;
+int target_ninstrs=MAX_DEF_INSTRS;
+int nthreads=1,pid_task[MAX_THREADS],pid=0;
+
+typedef struct { 
+	volatile unsigned long *pointer_addr;
+} test_i;
+
+test_i test_info [NUM_PTRS];
+//
+// declarations for holding thread information
+//
+typedef volatile unsigned long *tptrs;
+
+volatile unsigned long *mptr_threads[MAX_THREADS];
+volatile unsigned long *mdptr_threads[MAX_THREADS];
+volatile unsigned long *comm_ptr_threads[MAX_THREADS];
+
+
+
+// 
+// declarations for starting test
+//
+typedef int (*funct_t)();
+funct_t start_test;
+int executeit();
 
 #ifndef PAGESIZE
 #define PAGESIZE 4096
@@ -19,386 +53,236 @@
 #define MAP_ANONYMOUS MAP_ANON
 #endif
 
-// globals to aid debug to start
-volatile char *mptr = 0, *next_ptr = 0, *mdptr = 0;
-int num_inst = 0;
-int inst_goal = 25;
-unsigned int inst_seed = 1;
-
-// declarations for starting test
-typedef int (*funct_t)();
-funct_t start_test;
-int build_instructions();
-int executeit();
-
-static inline int rand_range(int min_value, int max_value);
-static inline int pick_instruction_kind(void);
-static inline short pick_mov_size(void);
-static inline int pick_general_reg(short mov_size);
-static inline int pick_source_reg(short mov_size);
-static inline int pick_dest_reg(short mov_size, int source_reg);
-static inline long pick_displacement(void);
-static inline long pick_immediate(short mov_size);
-static inline void emit_random_instruction(void);
-
-int main(int argc, char *argv[])
+/*
+ * simple routine to randomize numbers in a range
+ */
+int rand_range(int min_n, int max_n)
 {
+	return rand() % (max_n - min_n + 1) + min_n;
+}
 
-	int ibuilt = 0, rc = 0;
 
-	if (argc > 1)
-	{
-		inst_seed = (unsigned int)strtoul(argv[1], NULL, 0);
+main(int argc, char *argv[])
+{
+	int seed=0;
+	int ibuilt=0;
+
+
+
+	/* process arguments here */
+
+	printf("\nstarting seed = %d\n",seed);
+
+	/* need number of instructions */
+
+	/* need to pass in # of threads */
+
+
+	if (nthreads > MAX_THREADS) {
+		fprintf(stderr,"Sorry only built for %d threads over riding your %d\n", MAX_THREADS, nthreads);
+		fflush(stderr);
+		nthreads=MAX_THREADS;
 	}
 
-	if (argc > 2)
-	{
-		inst_goal = atoi(argv[2]);
-	}
+	srand(seed);
 
-	if (inst_goal < 4)
-	{
-		inst_goal = 4;
-	}
+	/* allocate buffer to perform stores and loads to  */
 
-	srand(inst_seed);
 
-	/* allocate buffer to perform stores and loads to, and set permissions  */
-
-	mdptr = (volatile char *)mmap(
-		(void *)0,
-		(MAX_DATA_BYTE + PAGESIZE - 1),
+	test_info[DATA].pointer_addr = mmap(
+		(void *) 0,
+		(MAX_DATA_BYTES+PAGESIZE-1) * nthreads,
 		PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_SHARED,
-		0, 0);
+		0, 0
+		);
 
-	if (mdptr == MAP_FAILED)
-	{
-		printf("data mptr allocation failed\n");
+	/* save the base address for debug like before */
+
+	mdptr=(volatile char *)test_info[DATA].pointer_addr;
+
+	if (((int *)test_info[DATA].pointer_addr) == (int *)-1) {
+		perror("Couldn't mmap (MAX_DATA_BYTES)");
 		exit(1);
 	}
 
-	/* allocate buffer to build instructions into, and set permissions to allow execution of this memory area */
 
-	mptr = (volatile char *)mmap(
-		(void *)0,
-		(MAX_INSTR_BYTES + PAGESIZE - 1),
+	
+	/* allocate buffer to build instructions into */
+
+	test_info[CODE].pointer_addr = mmap(
+		(void *) 0,
+		(MAX_INSTR_BYTES+PAGESIZE-1) * nthreads,
 		PROT_READ | PROT_WRITE | PROT_EXEC,
 		MAP_ANONYMOUS | MAP_SHARED,
-		0, 0);
+		0, 0
+		);
 
-	if (mptr == MAP_FAILED)
-	{
-		printf("instr  mptr allocation failed\n");
+	/* keep a copy to the base here */
+
+	mptr=(volatile char *)test_info[CODE].pointer_addr;
+
+	if (((int *)test_info[CODE].pointer_addr) == (int *)-1) {
+		perror("Couldn't mmap (MAX_INSTR_BYTES)");
 		exit(1);
 	}
 
-	next_ptr = mptr; // init next_ptr
 
-	ibuilt = build_instructions(); // build instructions
+	/* allocate buffer to build communications area into */
 
-	/* ok now that I built the critters, time to execute them */
+	test_info[COMM].pointer_addr = mmap(
+		(void *) 0,
+		(MAX_COMM_BYTES+PAGESIZE-1) * nthreads,
+		PROT_READ | PROT_WRITE | PROT_EXEC,
+		MAP_ANONYMOUS | MAP_SHARED,
+		0, 0
+		);
 
-	start_test = (funct_t)mptr;
-	executeit(start_test);
+	comm_ptr=(volatile char *)test_info[COMM].pointer_addr;
 
-	fprintf(stderr, "generation program complete, %d instructions generated, and executed\n", ibuilt);
+	if (((int *)test_info[COMM].pointer_addr) == (int *)-1) {
+		perror("Couldn't mmap (MAX_INSTR_BYTES)");
+		exit(1);
+	}
+
+	/* make the standard output and stderrr unbuffered */
+
+	setbuf(stdout, (char *) NULL);
+	setbuf(stderr, (char *) NULL);
+
+
+	/* start appropriate # of threads */
+
+	for (i=0;i<nthreads;i++) 
+	{
+	
+		next_ptr=(mptr+(i*MAX_INSTR_BYTES));          // init next_ptr
+		fprintf(stderr,"T%d next_ptr=0x%lx\n",i,(unsigned long)next_ptr);
+		mdptr_threads[i]=(tptrs)(mdptr+(i*MAX_DATA_BYTES));  // init threads data pointer
+		mptr_threads[i]=(tptrs)next_ptr;                     // save ptr per thread
+		comm_ptr_threads[i]=(tptrs)comm_ptr;                 // everyone gets the same for now
+
+
+		/* use fork to start a new child process */
+
+		if((pid=fork()) == 0) {
+
+			fprintf(stderr,"T%d fork\n",i);
+			fflush(stderr);
+
+			//
+			// NOTE:  you could set your sched_setaffinity here...better to make a subroutine to bind
+			// 
+			//
+			ibuilt=build_instructions(mptr_threads[i],i);  // build instructions
+
+			/* ok now that I built the critters, time to execute them */
+
+			start_test=(funct_t) mptr_threads[i];
+			executeit(start_test);
+			fprintf(stderr,"T%d generation program complete, instructions generated: %d\n",i, ibuilt);
+			fflush(stderr);
+
+			break;
+			
+		}
+		
+                else if (pid_task[i] == -1) {
+			perror("fork me failed");
+			exit(1);
+		} else { // this should be the parent 
+
+			pid_task[i]=pid; // save pid
+
+			fprintf(stderr,"child T%d started:\n",pid);
+			fflush(stderr);
+
+		}
+	     
+	} // end for nthreads
+
+
+	// wait for threads to complete
+
+	for (i=0;i<nthreads;i++) {
+		waitpid(pid_task[i], NULL, 0);
+	}
+
 
 	// clean up the allocation before getting out
 
-	munmap((caddr_t)mdptr, (MAX_DATA_BYTE + PAGESIZE - 1));
-	munmap((caddr_t)mptr, (MAX_INSTR_BYTES + PAGESIZE - 1));
-}
+	munmap((caddr_t)mdptr,(MAX_DATA_BYTES+PAGESIZE-1)*nthreads);
+	munmap((caddr_t)mptr,(MAX_INSTR_BYTES+PAGESIZE-1)*nthreads);
+	munmap((caddr_t)comm_ptr,(MAX_COMM_BYTES+PAGESIZE-1)*nthreads);
 
-//
-// Routine:  rand_range
-//
-// Description:
-//
-// Return a random integer within an inclusive range.
-//
-static inline int rand_range(int min_value, int max_value)
-{
-	return min_value + (rand() % (max_value - min_value + 1));
-}
 
-//
-// Routine:  pick_instruction_kind
-//
-// Description:
-//
-// Pick one of the instruction families.
-//
-static inline int pick_instruction_kind(void)
-{
-	return rand_range(0, 3);
-}
-
-//
-// Routine:  pick_mov_size
-//
-// Description:
-//
-// Pick a legal operand width for the generator.
-//
-static inline short pick_mov_size(void)
-{
-	static const short sizes[] = {ISZ_1, ISZ_2, ISZ_4, ISZ_8};
-	return sizes[rand_range(0, 3)];
-}
-
-//
-// Routine:  pick_general_reg
-//
-// Description:
-//
-// Pick a general-purpose register but keep the base pointer register out of the
-// random pool so memory addressing stays stable.
-//
-static inline int pick_general_reg(short mov_size)
-{
-	static const int regs_word_dword_qword[] = {REG_EAX, REG_ECX, REG_EDX, REG_ESI, REG_EDI};
-	static const int regs_byte[] = {REG_EAX, REG_ECX, REG_EDX, REG_ESI};
-
-	if (mov_size == ISZ_1)
-	{
-		return regs_byte[rand_range(0, 3)];
-	}
-
-	return regs_word_dword_qword[rand_range(0, 4)];
-}
-
-//
-// Routine:  pick_source_reg
-//
-// Description:
-//
-// Pick a source register for a randomized instruction.
-//
-static inline int pick_source_reg(short mov_size)
-{
-	return pick_general_reg(mov_size);
-}
-
-//
-// Routine:  pick_dest_reg
-//
-// Description:
-//
-// Pick a destination register that is different from the source register.
-//
-static inline int pick_dest_reg(short mov_size, int source_reg)
-{
-	int dest_reg = pick_general_reg(mov_size);
-
-	while ((dest_reg == source_reg) || (dest_reg == REG_EBX))
-	{
-		dest_reg = pick_general_reg(mov_size);
-	}
-
-	return dest_reg;
-}
-
-//
-// Routine:  pick_displacement
-//
-// Description:
-//
-// Pick one of the professor-specified displacement choices.
-//
-static inline long pick_displacement(void)
-{
-	static const long disps[] = {0, 8, 32};
-	return disps[rand_range(0, 2)];
-}
-
-//
-// Routine:  pick_immediate
-//
-// Description:
-//
-// Pick a random immediate that fits the selected instruction width.
-//
-static inline long pick_immediate(short mov_size)
-{
-	switch (mov_size)
-	{
-	case ISZ_1:
-		return rand_range(0x01, 0x7f);
-	case ISZ_2:
-		return rand_range(0x0100, 0x7fff);
-	case ISZ_4:
-		return (long)(((unsigned long long)rand() << 16) ^ (unsigned long long)rand());
-	case ISZ_8:
-	default:
-		return (long)((((unsigned long long)rand() << 48) ^
-					   ((unsigned long long)rand() << 32) ^
-					   ((unsigned long long)rand() << 16) ^
-					   (unsigned long long)rand()));
-	}
-}
-
-//
-// Routine:  emit_random_instruction
-//
-// Description:
-//
-// Emit one randomized instruction from the required set.
-//
-static inline void emit_random_instruction(void)
-{
-	int kind = pick_instruction_kind();
-	short mov_size = pick_mov_size();
-	int src_reg = pick_source_reg(mov_size);
-	int dest_reg = pick_dest_reg(mov_size, src_reg);
-	long displacement = pick_displacement();
-	long imm_value = pick_immediate(mov_size);
-
-	switch (kind)
-	{
-	case 0:
-		next_ptr = build_mov_imm_to_register(mov_size, imm_value, dest_reg, next_ptr);
-		break;
-
-	case 1:
-		next_ptr = build_mov_register_to_register(mov_size, src_reg, dest_reg, next_ptr);
-		break;
-
-	case 2:
-		next_ptr = build_mov_register_to_memory(mov_size, src_reg, REG_EBX, displacement, next_ptr);
-		break;
-
-	case 3:
-	default:
-		next_ptr = build_mov_memory_to_register(mov_size, dest_reg, REG_EBX, displacement, next_ptr);
-		break;
-	}
-
-	num_inst++;
-	fprintf(stderr, "next ptr is now 0x%lx\n", (long)next_ptr);
 }
 
 /*
  * Function: executeit
- *
+ * 
  * Description:
  *
- * This function will start executing at the function address passed into it
+ * This function will start executing at the function address passed into it 
  * and return an integer return value that will be used to indicate pass(0)/fail(1)
  *
- * INTPUTs:  funct_t start_addr :      function pointer
+ * INTPUTs:  funct_t start_addr :      function pointer 
  *
  * Returns:  int                :      0 for pass, 1 for fail
- */
-int executeit(funct_t start_addr)
+ */   
+int executeit(funct_t start_addr) 
 {
 
-	volatile int i, rc = 0;
+	volatile int i,rc=0;
 
-	i = 0;
+	i=0;
 
-	rc = (*start_addr)();
+	rc=(*start_addr)();
 
-	return (0);
+	return(0);
 }
 
-//
-// Routine:  add_headeri
-//
-// Description:
-//
-// Build the prologue for the generated code so it behaves like a real
-// callable function.
-//
-static inline volatile char *add_headeri(volatile char *tgt_addr)
-{
-#if defined(__x86_64__) || defined(_M_X64)
-	// Build a real x86_64 stack frame first so the generated code can return cleanly.
-	(*tgt_addr++) = 0xc8;		 // enter
-	(*(short *)tgt_addr) = 2048; // stack size
-	tgt_addr += BYTE2_OFF;
-	(*tgt_addr++) = 0x00; // nesting level
 
-	// Save the callee-saved registers we may rely on inside the generated block.
-	(*tgt_addr++) = 0x53; // push rbx
-	tgt_addr = build_push_reg(REG_R12, 1, tgt_addr);
-	tgt_addr = build_push_reg(REG_R13, 1, tgt_addr);
-	tgt_addr = build_push_reg(REG_R14, 1, tgt_addr);
-	tgt_addr = build_push_reg(REG_R15, 1, tgt_addr);
-
-	// Keep the data base pointer in rbx so load/store helpers have a stable anchor.
-	tgt_addr = build_mov_imm_to_register(ISZ_8, (long)mdptr, REG_EBX, tgt_addr);
-#else
-	// On 32-bit x86, save everything up front and use ebx as the data base pointer.
-	(*tgt_addr++) = 0xc8;		 // enter
-	(*(short *)tgt_addr) = 2048; // stack size
-	tgt_addr += BYTE2_OFF;
-	(*tgt_addr++) = 0x00; // nesting level
-
-	tgt_addr = build_pusha(tgt_addr);
-	tgt_addr = build_mov_imm_to_register(ISZ_4, (long)mdptr, REG_EBX, tgt_addr);
-#endif
-
-	return (tgt_addr);
-}
-
-//
-// Routine:  add_endi
-//
-// Description:
-//
-// Build the epilogue for the generated code so it unwinds and returns cleanly
-// to the caller.
-//
-static inline volatile char *add_endi(volatile char *tgt_addr)
-{
-#if defined(__x86_64__) || defined(_M_X64)
-	// Restore the registers in reverse order, then unwind the stack frame and return.
-	tgt_addr = build_pop_reg(REG_R15, 1, tgt_addr);
-	tgt_addr = build_pop_reg(REG_R14, 1, tgt_addr);
-	tgt_addr = build_pop_reg(REG_R13, 1, tgt_addr);
-	tgt_addr = build_pop_reg(REG_R12, 1, tgt_addr);
-	(*tgt_addr++) = 0x5b; // pop rbx
-
-	(*tgt_addr++) = 0xc9; // leave
-	(*tgt_addr++) = 0xc3; // ret
-#else
-	// 32-bit x86 uses popa to match the push-all prologue.
-	tgt_addr = build_popa(tgt_addr);
-	(*tgt_addr++) = 0xc9; // leave
-	(*tgt_addr++) = 0xc3; // ret
-#endif
-
-	return (tgt_addr);
-}
 
 //
 // Routine:  build_instructions
 //
 // Description:
 //
-// INPUT: none yet
-//
+// INPUTS: none yet
+// 
 // OUTPUT: returns the number of instructions built
-//
-int build_instructions()
-{
+// 
+int build_instructions(volatile char *next_ptr, int thread_id) {
 
-	// Start with the standard function-style prologue.
-	next_ptr = add_headeri(next_ptr);
+	int num_inst=0;
 
-	// Make sure the required instruction families appear, then randomize the rest.
-	emit_random_instruction(); // imm -> reg
-	emit_random_instruction(); // reg -> reg
-	emit_random_instruction(); // reg -> memory
-	emit_random_instruction(); // memory -> reg
+	// example instruction generation..
 
-	while (num_inst < inst_goal)
-	{
-		emit_random_instruction();
-	}
+	fprintf(stderr, "building instructions for T%d\n",thread_id);
+	fflush(stderr);
 
-	// Finish with the matching epilogue so the generated block returns cleanly.
-	next_ptr = add_endi(next_ptr);
+	//	next_ptr=add_headeri(next_ptr);
+
+	// INSERT YOUR CODE HERE AND NUKE MINE :-)
+
+	// test move ecx into ebx
+	next_ptr=build_mov_register_to_register(ISZ_4, REG_ECX ,REG_EBX, next_ptr);
+	num_inst++;
+
+	fprintf(stderr,"next ptr is now 0x%lx\n", (long) next_ptr);
+	fflush(stderr);
+
+	// test move edx into edi
+	next_ptr=build_mov_register_to_register(ISZ_4, REG_EDX ,REG_EDI, next_ptr);
+	num_inst++;
+
+	fprintf(stderr,"next ptr is now 0x%lx\n", (long) next_ptr);
+	fflush(stderr);
+
+	// next_ptr=add_endi(next_ptr);
+
+	// nuke when you do your add_endit,shouldn't do this, but for lab base purposes..
+	next_ptr=build_ret(next_ptr);
 
 	return (num_inst);
 }
