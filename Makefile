@@ -1,29 +1,30 @@
-#
-# wimpy make example to build lab
-#
-IDIR =./include
-CC=gcc
-CFLAGS=-I$(IDIR) -g
+all: build
 
-ODIR=obj
-LDIR =./lib
+build: encodeit
 
-LIBS=-lm
+encodeit:
+	gcc -g -o encodeit encodeit.c -I include
 
-_DEPS = ia32_encode.h
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+# Runtime argument defaults — override any of these on the command line, e.g.:
+#   make run SEED=42 NINSTRS=50 NTHREADS=4 LOGFILE=/tmp/run.log
+SEED     ?= 0
+NINSTRS  ?= 25
+NTHREADS ?= 1
+LOGFILE  ?=
 
-_OBJ = encodeit.o 
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+# Build the argument list dynamically so LOGFILE is only appended when set
+RUN_ARGS := $(SEED) $(NINSTRS) $(NTHREADS)
+ifneq ($(LOGFILE),)
+    RUN_ARGS += $(LOGFILE)
+endif
 
+run: build
+	./encodeit $(RUN_ARGS)
 
-$(ODIR)/%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+gdb: build
+	gdb -q ./encodeit -ex 'set follow-fork-mode child' -ex 'br executeit' -ex 'run $(RUN_ARGS)' -ex 'x/60ai start_addr'
 
-encodeit: $(OBJ)
-	gcc -o $@ $^ $(CFLAGS) $(LIBS)
-
-.PHONY: clean
+.PHONY: all build run gdb clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ encodeit
+	rm -f encodeit
