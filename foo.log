@@ -6,46 +6,6 @@ inst=5 type=mem->reg     size=4 src_reg=7 dest_reg=2 disp=8
 inst=6 type=reg->reg     size=2 src_reg=1 dest_reg=7 disp=32
 inst=7 type=reg->mem     size=8 src_reg=0 dest_reg=6 disp=8
 inst=8 type=xadd(LOCK)   size=2 src_reg=1 dest_reg=0 disp=0
-inst=9 type=xadd(LOCK)   sizeinst=1 type=reg->reg     size=4 src_reg=2 dest_reg=0 disp=32
-inst=2 type=reg->reg     size=2 src_reg=2 dest_reg=0 disp=8
-inst=3 type=mem->reg     size=4 src_reg=2 dest_reg=1 disp=32
-inst=4 type=reg->mem     size=4 src_reg=2 dest_reg=6 disp=8
-inst=5 type=mem->reg     size=4 src_reg=7 dest_reg=2 disp=8
-inst=6 type=reg->reg     size=2 src_reg=1 dest_reg=7 disp=32
-inst=7 type=reg->mem     size=8 src_reg=0 dest_reg=6 disp=8
-inst=8 type=xadd(LOCK)   size=2 src_reg=1 dest_reg=0 disp=0
-inst=9 type=xadd(LOCK)   size=4 src_reg=2 dest_reg=7 disp=0
-inst=10 type=reg->mem     size=4 src_reg=7 dest_reg=6 disp=32
-inst=11 type=imm->reg     size=1 src_reg=0 dest_reg=6 disp=32
-inst=12 type=xchg         size=1 src_reg=0 dest_reg=6 disp=8
-inst=13 type=imm->reg     size=8 src_reg=0 dest_reg=7 disp=8
-inst=14 type=imm->reg     size=1 src_reg=0 dest_reg=1 disp=32
-inst=15 type=imm->reg     size=2 src_reg=7 dest_reg=0 disp=0
-inst=16 type=mem->reg     size=8 src_reg=1 dest_reg=0 disp=0
-inst=17 type=reg->reg     size=2 src_reg=1 dest_reginst=1 type=reg->reg     size=4 src_reg=2 dest_reg=0 disp=32
-inst=2 type=reg->reg     size=2 src_reg=2 dest_reg=0 disp=8
-inst=3 type=mem->reg     size=4 src_reg=2 dest_reg=1 disp=32
-inst=4 type=reg->mem     size=4 src_reg=2 dest_reg=6 disp=8
-inst=5 type=mem->reg     size=4 src_reg=7 dest_reg=2 disp=8
-inst=6 type=reg->reg     size=2 src_reg=1 dest_reg=7 disp=32
-inst=7 type=reg->mem     size=8 src_reg=0 dest_reg=6 disp=8
-inst=8 type=xadd(LOCK)   size=2 src_reg=1 dest_reg=0 disp=0
-inst=9 type=xadd(LOCK)   sizeinst=1 type=reg->reg     size=4 src_reg=2 dest_reg=0 disp=32
-inst=2 type=reg->reg     size=2 src_reg=2 dest_reg=0 disp=8
-inst=3 type=mem->reg     size=4 src_reg=2 dest_reg=1 disp=32
-inst=4 type=reg->mem     size=4 src_reg=2 dest_reg=6 disp=8
-inst=5 type=mem->reg     size=4 src_reg=7 dest_reg=2 disp=8
-inst=6 type=reg->reg     size=2 src_reg=1 dest_reg=7 disp=32
-inst=7 type=reg->mem     size=8 src_reg=0 dest_reg=6 disp=8
-inst=8 type=xadd(LOCK)   size=2 src_reg=1 dest_reg=0 disp=0
-inst=9 type=xadd(LOCK)   sizeinst=1 type=reg->reg     size=4 src_reg=2 dest_reg=0 disp=32
-inst=2 type=reg->reg     size=2 src_reg=2 dest_reg=0 disp=8
-inst=3 type=mem->reg     size=4 src_reg=2 dest_reg=1 disp=32
-inst=4 type=reg->mem     size=4 src_reg=2 dest_reg=6 disp=8
-inst=5 type=mem->reg     size=4 src_reg=7 dest_reg=2 disp=8
-inst=6 type=reg->reg     size=2 src_reg=1 dest_reg=7 disp=32
-inst=7 type=reg->mem     size=8 src_reg=0 dest_reg=6 disp=8
-inst=8 type=xadd(LOCK)   size=2 src_reg=1 dest_reg=0 disp=0
 inst=9 type=xadd(LOCK)   size=4 src_reg=2 dest_reg=7 disp=0
 inst=10 type=reg->mem     size=4 src_reg=7 dest_reg=6 disp=32
 inst=11 type=imm->reg     size=1 src_reg=0 dest_reg=6 disp=32
@@ -95,30 +55,6 @@ inst=6 type=reg->reg     size=2 src_reg=1 dest_reg=7 disp=32
 inst=7 type=reg->mem     size=8 src_reg=0 dest_reg=6 disp=8
 inst=8 type=xadd(LOCK)   size=2 src_reg=1 dest_reg=0 disp=0
 inst=9 type=xadd(LOCK)   size=4 src_reg=2 dest_reg=7 disp=0
-inst=10 type=reg->mem     size=4 src_reg=7 dest_reg=6 disp=32
-inst=11 type=imm->reg     size=1 src_reg=0 dest_reg=6 disp=32
-inst=12 type=xchg         size=1 src_reg=0 dest_reg=6 disp=8
-inst=13 type=imm->reg     size=8 src_reg=0 dest_reg=7 disp=8
-inst=14 type=imm->reg     size=1 src_reg=0 dest_reg=1 disp=32
-inst=15 type=imm->reg     size=2 src_reg=7 dest_reg=0 disp=0
-inst=16 type=mem->reg     size=8 src_reg=1 dest_reg=0 disp=0
-inst=17 type=reg->reg     size=2 src_reg=1 dest_reg=4 src_reg=2 dest_reg=7 disp=0
-inst=10 type=reg->mem     size=4 src_reg=7 dest_reg=6 disp=32
-inst=11 type=imm->reg     size=1 src_reg=0 dest_reg=6 disp=32
-inst=12 type=xchg         size=1 src_reg=0 dest_reg=6 disp=8
-inst=13 type=imm->reg     size=8 src_reg=0 dest_reg=7 disp=8
-inst=14 type=imm->reg     size=1 src_reg=0 dest_reg=1 disp=32
-inst=15 type=imm->reg     size=2 src_reg=7 dest_reg=0 disp=0
-inst=16 type=mem->reg     size=8 src_reg=1 dest_reg=0 disp=0
-inst=17 type=reg->reg     size=2 src_reg=1 dest_reg=4 src_reg=2 dest_reg=7 disp=0
-inst=10 type=reg->mem     size=4 src_reg=7 dest_reg=6 disp=32
-inst=11 type=imm->reg     size=1 src_reg=0 dest_reg=6 disp=32
-inst=12 type=xchg         size=1 src_reg=0 dest_reg=6 disp=8
-inst=13 type=imm->reg     size=8 src_reg=0 dest_reg=7 disp=8
-inst=14 type=imm->reg     size=1 src_reg=0 dest_reg=1 disp=32
-inst=15 type=imm->reg     size=2 src_reg=7 dest_reg=0 disp=0
-inst=16 type=mem->reg     size=8 src_reg=1 dest_reg=0 disp=0
-inst=17 type=reg->reg     size=2 src_reg=1 dest_reg=4 src_reg=2 dest_reg=7 disp=0
 inst=10 type=reg->mem     size=4 src_reg=7 dest_reg=6 disp=32
 inst=11 type=imm->reg     size=1 src_reg=0 dest_reg=6 disp=32
 inst=12 type=xchg         size=1 src_reg=0 dest_reg=6 disp=8
@@ -127,42 +63,6 @@ inst=14 type=imm->reg     size=1 src_reg=0 dest_reg=1 disp=32
 inst=15 type=imm->reg     size=2 src_reg=7 dest_reg=0 disp=0
 inst=16 type=mem->reg     size=8 src_reg=1 dest_reg=0 disp=0
 inst=17 type=reg->reg     size=2 src_reg=1 dest_reg=6 disp=32
-inst=18 type=mem->reg     size=1 src_reg=1 dest_reg=6 disp=32
-inst=19 type=mem->reg     size=8 src_reg=0 dest_reg=7 disp=0
-inst=20 type=xadd         size=4 src_reg=7 dest_reg=6 disp=32
-inst=21 type=reg->mem     size=1 src_reg=2 dest_reg=6 disp=32
-inst=22 type=mem->reg     size=2 src_reg=7 dest_reg=1 disp=8
-inst=23 type=sfence       size=0 src_reg=-1 dest_reg=-1 disp=0
-inst=24 type=mem->reg     size=1 src_reg=6 dest_reg=0 disp=0
-inst=25 type=xadd(LOCK)   size=1 src_reg=6 dest_reg=1 disp=8
-=6 disp=32
-inst=18 type=mem->reg     size=1 src_reg=1 dest_reg=6 disp=32
-inst=19 type=mem->reg     size=8 src_reg=0 dest_reg=7 disp=0
-inst=20 type=xadd         size=4 src_reg=7 dest_reg=6 disp=32
-inst=21 type=reg->mem     size=1 src_reg=2 dest_reg=6 disp=32
-inst=22 type=mem->reg     size=2 src_reg=7 dest_reg=1 disp=8
-inst=23 type=sfence       size=0 src_reg=-1 dest_reg=-1 disp=0
-inst=24 type=mem->reg     size=1 src_reg=6 dest_reg=0 disp=0
-inst=25 type=xadd(LOCK)   size=1 src_reg=6 dest_reg=1 disp=8
-=6 disp=32
-inst=18 type=mem->reg     size=1 src_reg=1 dest_reg=6 disp=32
-inst=19 type=mem->reg     size=8 src_reg=0 dest_reg=7 disp=0
-inst=20 type=xadd         size=4 src_reg=7 dest_reg=6 disp=32
-inst=21 type=reg->mem     size=1 src_reg=2 dest_reg=6 disp=32
-inst=22 type=mem->reg     size=2 src_reg=7 dest_reg=1 disp=8
-inst=23 type=sfence       size=0 src_reg=-1 dest_reg=-1 disp=0
-inst=24 type=mem->reg     size=1 src_reg=6 dest_reg=0 disp=0
-inst=25 type=xadd(LOCK)   size=1 src_reg=6 dest_reg=1 disp=8
-=6 disp=32
-inst=18 type=mem->reg     size=1 src_reg=1 dest_reg=6 disp=32
-inst=19 type=mem->reg     size=8 src_reg=0 dest_reg=7 disp=0
-inst=20 type=xadd         size=4 src_reg=7 dest_reg=6 disp=32
-inst=21 type=reg->mem     size=1 src_reg=2 dest_reg=6 disp=32
-inst=22 type=mem->reg     size=2 src_reg=7 dest_reg=1 disp=8
-inst=23 type=sfence       size=0 src_reg=-1 dest_reg=-1 disp=0
-inst=24 type=mem->reg     size=1 src_reg=6 dest_reg=0 disp=0
-inst=25 type=xadd(LOCK)   size=1 src_reg=6 dest_reg=1 disp=8
-=6 disp=32
 inst=18 type=mem->reg     size=1 src_reg=1 dest_reg=6 disp=32
 inst=19 type=mem->reg     size=8 src_reg=0 dest_reg=7 disp=0
 inst=20 type=xadd         size=4 src_reg=7 dest_reg=6 disp=32
